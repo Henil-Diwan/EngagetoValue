@@ -1,0 +1,51 @@
+@startuml architecture
+title High-Level System Architecture
+
+skinparam DefaultFontName Segoe UI
+skinparam componentStyle rectangle
+skinparam ArrowColor #2E5C8A
+skinparam ComponentBackgroundColor #E8F1FA
+skinparam ComponentBorderColor #2E5C8A
+skinparam DatabaseBackgroundColor #FCE8B2
+skinparam DatabaseBorderColor #B07B00
+
+actor "Data Scientist" as DS
+
+database "Kaggle\nCompetition Data" as Kaggle {
+  [train_data.csv]
+  [test_data.csv]
+}
+
+package "Notebook Runtime\n(Kaggle / Local Jupyter)" {
+  [kagglehub\n(auth + download)] as KH
+  [pandas / numpy\n(data wrangling)] as Pandas
+  [matplotlib / seaborn\n(EDA visuals)] as Plot
+  [scikit-learn\n(imputer, RFE, split, pipelines, stacking)] as SK
+  [category_encoders\n(TargetEncoder)] as CE
+  [xgboost\n(XGBRegressor)] as XGB
+}
+
+package "Trained Model" {
+  [Stacking Regressor] as Stack
+  [RandomForest base] as RF
+  [XGBoost base] as XGBM
+  [Ridge meta-learner] as Ridge
+}
+
+file "submission.csv\n(id, purchaseValue)" as Sub
+
+DS --> KH : kagglehub.login()
+KH --> Kaggle : competition_download
+Kaggle --> Pandas : read_csv
+Pandas --> Plot : EDA
+Pandas --> SK : impute / split / RFE
+Pandas --> CE : target encode
+SK --> Stack : fit
+CE --> SK
+XGB --> Stack
+Stack o-- RF
+Stack o-- XGBM
+Stack o-- Ridge
+Stack --> Sub : predict(X_test)
+
+@enduml

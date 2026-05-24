@@ -1,0 +1,78 @@
+@startuml pipeline
+title End-to-End ML Pipeline
+
+skinparam ActivityBackgroundColor #E8F1FA
+skinparam ActivityBorderColor #2E5C8A
+skinparam ActivityDiamondBackgroundColor #FCE8B2
+skinparam ActivityDiamondBorderColor #B07B00
+skinparam ArrowColor #2E5C8A
+skinparam DefaultFontName Segoe UI
+
+start
+:Login to Kaggle & download
+**engage-2-value-from-clicks-to-conversions** dataset;
+:Load **train_data.csv** and **test_data.csv**
+into pandas DataFrames;
+
+partition "Exploratory Data Analysis" {
+  :Inspect schema, null counts, dtypes (df.info / df.describe);
+  :Inspect categorical cardinality;
+  :Plot target distribution & numeric histograms;
+  :Pairplot of top-3 numerically correlated features;
+}
+
+partition "Preprocessing" {
+  :Split features (X) and target (y = purchaseValue);
+  :Identify numeric vs categorical columns;
+  :Impute numeric NaNs with **median**;
+  :Impute categorical NaNs with **most frequent**;
+}
+
+partition "Feature Engineering" {
+  :Target-mean encodings for city / region / device;
+  :Engagement = hits + pageViews - bounces;
+  :Ratios: hits_per_page, bounce_ratio, page_per_visit ...;
+  :Interactions: hits_x_visits, engagement_x_city_avg ...;
+  :Log transforms (log1p) of skewed numerics;
+  :Datetime parts from sessionStart (hour, weekday, is_weekend);
+  :Hour binning (Night / Morning / Afternoon / Evening);
+  :Combo categoricals: channel_device, device_region, channel_region;
+  :User-level aggregates + z-scored hits;
+  :Frequency encodings for city / region;
+  :Drop sessionStart;
+  :**Target Encode** all categorical features (category_encoders);
+}
+
+partition "Feature Selection" {
+  :Fit RFE with XGBRegressor base estimator;
+  :Select top **18** features;
+}
+
+:Train / Validation split (80 / 20);
+
+partition "Model Training & Tuning" {
+  fork
+    :ElasticNet pipeline
+    (StandardScaler -> ElasticNet)
+    RandomizedSearchCV: alpha, l1_ratio;
+  fork again
+    :HistGradientBoosting
+    RandomizedSearchCV: depth, lr, leaves;
+  fork again
+    :Stacking Regressor
+    base = [RandomForest, XGBoost]
+    meta = Ridge(alpha=100) over StandardScaler
+    passthrough = True, cv = 5;
+  end fork
+}
+
+:Compare validation **R^2**;
+if (Best model?) then (Stacking)
+  :Refit stacking model on full **X, y**;
+  :Predict on X_test;
+  :Write **submission.csv** (id, purchaseValue);
+else (other)
+  :(Not selected in this notebook);
+endif
+stop
+@enduml

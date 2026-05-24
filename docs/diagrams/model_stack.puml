@@ -1,0 +1,38 @@
+@startuml model_stack
+title Stacking Regressor (Final Model)
+
+skinparam DefaultFontName Segoe UI
+skinparam rectangle {
+  BackgroundColor #E8F1FA
+  BorderColor #2E5C8A
+}
+skinparam ArrowColor #2E5C8A
+
+rectangle "Input features\n(18 RFE-selected columns)" as IN #FCE8B2
+
+package "Level-0 base learners (cv=5, passthrough=True)" {
+  rectangle "RandomForestRegressor\nn_estimators=500\nmax_features='log2'\nbootstrap=False" as RF
+  rectangle "XGBRegressor\nn_estimators=500\nmax_depth=9\nlr=0.1\nsubsample=1.0\ncolsample_bytree=0.6" as XGB
+}
+
+package "Level-1 meta learner" {
+  rectangle "Pipeline:\nStandardScaler -> Ridge(alpha=100)" as META
+}
+
+rectangle "y_hat (purchaseValue)" as OUT #C8E6C9
+
+IN --> RF
+IN --> XGB
+RF  --> META : out-of-fold preds
+XGB --> META : out-of-fold preds
+IN  ..> META : passthrough features
+META --> OUT
+
+note right of META
+  cv = 5
+  passthrough = True
+  (raw features + base preds
+   are fed to the meta learner)
+end note
+
+@enduml

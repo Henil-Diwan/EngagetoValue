@@ -1,0 +1,70 @@
+@startuml feature_engineering
+title Feature Engineering Map
+
+skinparam DefaultFontName Segoe UI
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor #E8F1FA
+  BorderColor #2E5C8A
+}
+skinparam ArrowColor #2E5C8A
+
+rectangle "Raw columns" as RAW #FCE8B2 {
+}
+
+package "Target-mean encodings" {
+  rectangle "city_avg_spend\nregion_avg_spend\ndevice_avg_spend" as TME
+}
+
+package "Engagement metrics" {
+  rectangle "engagement = totalHits + pageViews - bounces\nis_bounce\nbounce_ratio\nbounce_per_visit\nbounce_per_hit\nbounce_rate_x_page" as ENG
+}
+
+package "Ratios & interactions" {
+  rectangle "hits_per_page\nvisit_per_session\nhits_x_visits\nhits_x_hour\nengagement_x_city_avg\nvisits_x_bounce\npage_per_visit\navg_hits_per_page\nengagement_per_session" as RATIO
+}
+
+package "Log transforms" {
+  rectangle "log_totalHits\nlog_pageViews\nlog_totals.visits\nlog_hits_x_visits" as LOGS
+}
+
+package "Time features (from sessionStart)" {
+  rectangle "hour\nweekday\nis_weekend\nhour_bin (Night/Morning/Afternoon/Evening)" as TIME
+}
+
+package "Combo categoricals" {
+  rectangle "channel_device\ndevice_region_combo\nchannel_x_region" as COMBO
+}
+
+package "User-level aggregates" {
+  rectangle "user_avg_hits\nz_hits (per-user normalized)" as USER
+}
+
+package "Frequency encodings" {
+  rectangle "geoNetwork.city_freq\ngeoNetwork.region_freq" as FREQ
+}
+
+rectangle "Target encoded\n(category_encoders.TargetEncoder)" as TE #C8E6C9
+rectangle "RFE (XGBRegressor)\n-> top 18 features" as RFE #C8E6C9
+
+RAW --> TME
+RAW --> ENG
+RAW --> RATIO
+RAW --> LOGS
+RAW --> TIME
+RAW --> COMBO
+RAW --> USER
+RAW --> FREQ
+
+TME --> TE
+ENG --> TE
+RATIO --> TE
+LOGS --> TE
+TIME --> TE
+COMBO --> TE
+USER --> TE
+FREQ --> TE
+
+TE --> RFE
+
+@enduml
