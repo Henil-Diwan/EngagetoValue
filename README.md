@@ -13,6 +13,12 @@ target-encoded categoricals.
 
 ---
 
+
+https://github.com/user-attachments/assets/a3722369-cf50-4b91-92c3-b4092abb9102
+
+
+---
+
 ## Table of contents
 
 1. [Problem statement](#problem-statement)
